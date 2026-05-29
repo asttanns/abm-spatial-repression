@@ -26,10 +26,14 @@ class RepressionModel(mesa.Model):
         repression_step=5,
         dispersal_duration=3,
         repression_jitter=2,
+        cell_capacity=15,        
+        observation_radius=0,    
         max_steps=100,
-        seed=None,
+        rng=None,
     ):
-        super().__init__(seed=seed)
+        if rng is not None:
+            rng = int(rng)
+        super().__init__(rng=rng)
         self.env_type = env_type
         self.width = width
         self.height = height
@@ -39,6 +43,8 @@ class RepressionModel(mesa.Model):
         self.instigator_threshold = instigator_threshold
         self.repression_step = repression_step
         self.dispersal_duration = dispersal_duration
+        self.cell_capacity = cell_capacity
+        self.observation_radius   = observation_radius
         self.max_steps = max_steps
         self.repression_triggered = False
         self.running = True
@@ -82,6 +88,7 @@ class RepressionModel(mesa.Model):
             self.repression_triggered = True
 
         self.agents.shuffle_do("step")
+        self._check_cell_capacity()
         self.datacollector.collect(self)
         self._check_stopping_rules()
 
@@ -91,6 +98,17 @@ class RepressionModel(mesa.Model):
             if agent.state == MOBILIZED:
                 agent.state = DISPERSING
                 agent.steps_dispersing = 0
+
+    def _check_cell_capacity(self):
+        for cell_contents, (x, y) in self.grid.coord_iter():
+            visible = [
+                a for a in cell_contents
+                if a.state in (MOBILIZED, SHELTERED)
+            ]
+            if len(visible) > self.cell_capacity:
+                for agent in visible:
+                    agent.state = DISPERSING
+                    agent.steps_dispersing = 0
 
     def _check_stopping_rules(self):
         if self.steps >= self.max_steps:
