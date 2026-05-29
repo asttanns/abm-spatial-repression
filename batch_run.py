@@ -19,7 +19,7 @@ if __name__ == "__main__":
         "dispersal_duration":   [3],
         "cell_capacity":        [15],
         "max_steps":            [100],
-        "seed":                 list(range(10)),
+        "rng":                 list(range(10)),
     }
 
     total = 3 * 3 * 3 * 2 * 10
